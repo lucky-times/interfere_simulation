@@ -244,7 +244,7 @@ networkMacroscopicPathlossMap.num_first_sites = num_first_sites;% 双系统中第一个
 if SYS_config.debug_level>=1
     fprintf('Creating cell pathloss map\n');
 end
-macroscopic_pathloss_models.generalPathlossModel.calculate_pathloss_maps(SYS_config,eNodeB_sites,networkMacroscopicPathlossMap);
+% macroscopic_pathloss_models.generalPathlossModel.calculate_pathloss_maps(SYS_config,eNodeB_sites,networkMacroscopicPathlossMap);
 
 %% 从以前的平台继承来的，没什么用
 networkMacroscopicPathlossMap.name = 'NR or LTE pathloss model';

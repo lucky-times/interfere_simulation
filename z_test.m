@@ -50,7 +50,7 @@ SYS_config.n_UE_served_per_BS = 1; % 每个BS同一时间服务的UE数
 
 SYS_config.antenna.antenna_gain_pattern = 'NRAntennaBeamforming'; %波束赋型的类型（可以在此处增加扩展其他的波束赋型图案）
 SYS_config.UE_height = 200;%UAV飞行高度
-SYS_config.UE_r = 500; %UAV距中心基站的极径
+SYS_config.UE_r = 1200; %UAV距中心基站的极径
 str = sprintf("h=%d, r=%d", SYS_config.UE_height, SYS_config.UE_r);
 disp(str)
 % SYS_config.eNodeB_pos = zeros(19,2);
@@ -99,7 +99,7 @@ switch SYS_config.scene_type
                 SYS_config.map_resolution = 20;
                 SYS_config.shadow_fading_map_resolution = 20;
             else
-                SYS_config.map_resolution = 10;
+                SYS_config.map_resolution = 50;
                 SYS_config.shadow_fading_map_resolution=10;
             end
         end

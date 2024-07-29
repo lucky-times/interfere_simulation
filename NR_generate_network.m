@@ -50,7 +50,7 @@ if strcmp(SYS_config.macroscopic_pathloss_model,'TS36942')
     elseif strcmp(SYS_config.macroscopic_pathloss_model_settings.environment,'rural_macro')
         MCL = 80;% rural 场景MCL为80dB
     end
-    networkPathlossMap.apply_MCL(LTE_sectors,MCL);
+%     networkPathlossMap.apply_MCL(LTE_sectors,MCL);
 end
 if SYS_config.isDouble
     if strcmp(SYS_config.macroscopic_pathloss_model2,'TS36942')
@@ -67,7 +67,7 @@ if SYS_config.isDouble
 end
 
 %% 基于链路损耗与发射功率求基站覆盖范围
-NR_calculate_cell_coverage(SYS_config,networkPathlossMap,eNodeB_sites,eNodeB_sectors,networkShadowFadingMap);
+% NR_calculate_cell_coverage(SYS_config,networkPathlossMap,eNodeB_sites,eNodeB_sectors,networkShadowFadingMap);
 
 % To avoid error of missing return argument
 if ~exist('networkShadowFadingMap','var')

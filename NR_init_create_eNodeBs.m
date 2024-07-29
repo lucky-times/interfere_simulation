@@ -12,53 +12,67 @@ num_hetnet_sites = 0;% 除异构场景外，该值都为0
 %针对不同场景产生相应拓扑
 switch SYS_config.scene_type
     case {'UMA','RMa'}
-        n_rings = SYS_config.nr_eNodeB_rings;% UMa中基站围起来的圈数，0代表只有一个基站
-        shift_mode = SYS_config.shift_mode;% 偏移
-        
+%         n_rings = SYS_config.nr_eNodeB_rings;% UMa中基站围起来的圈数，0代表只有一个基站
+%         shift_mode = SYS_config.shift_mode;% 偏移
+%         
         ISD = SYS_config.ISD;% 基站间距离
-        [tmp_gridx,tmp_gridy] = meshgrid(-n_rings:n_rings,...
-            (-n_rings:n_rings)*sin(pi/3));
-        % 产生点，类似于下面这种形式
-        % * * * * *
-        % * * * * *
-        % * * * * *
-        % * * * * *
-        % * * * * *
-        if mod(n_rings,2) == 0
-            tmp_shift_idx = 2:2:2*n_rings+1; %转换偶数列
-            % 如下
-            % * * * * *
-            %  * * * * *
-            % * * * * *
-            %  * * * * *
-            % * * * * *
-        else
-            tmp_shift_idx = 1:2:2*n_rings+1; %转换奇数列
-            % 如下
-            %  * * * * *
-            % * * * * *
-            %  * * * * *
-            % * * * * *
-            %  * * * * *
+%         [tmp_gridx,tmp_gridy] = meshgrid(-n_rings:n_rings,...
+%             (-n_rings:n_rings)*sin(pi/3));
+%         % 产生点，类似于下面这种形式
+%         % * * * * *
+%         % * * * * *
+%         % * * * * *
+%         % * * * * *
+%         % * * * * *
+%         if mod(n_rings,2) == 0
+%             tmp_shift_idx = 2:2:2*n_rings+1; %转换偶数列
+%             % 如下
+%             % * * * * *
+%             %  * * * * *
+%             % * * * * *
+%             %  * * * * *
+%             % * * * * *
+%         else
+%             tmp_shift_idx = 1:2:2*n_rings+1; %转换奇数列
+%             % 如下
+%             %  * * * * *
+%             % * * * * *
+%             %  * * * * *
+%             % * * * * *
+%             %  * * * * *
+%         end
+%         
+%         tmp_gridx(tmp_shift_idx,:) = tmp_gridx(tmp_shift_idx,:) + 0.5;%转换
+%         
+%         rot = @(w_) [cos(w_),-sin(w_);sin(w_),cos(w_)]; %rot是一个函数，w_是其输入参数，函数的作用是产生一个矩阵 顺时针旋转w_
+%         for i_ = 1:7
+%             tmp_hex(i_,:) = ((n_rings+0.5)*rot(pi/3)^(i_-1)*[1;0]).'; % 乘[1;0]表示只取第一列
+%         end
+%         
+%         tmp_valid_positions = inpolygon(tmp_gridx,tmp_gridy,tmp_hex(:,1),tmp_hex(:,2));% tmp_hex是正六边形顶点坐标，inpolygon判断点是否在六边形内
+%         tmp_x = tmp_gridx(tmp_valid_positions);
+%         tmp_y = tmp_gridy(tmp_valid_positions);
+
+        %根据给定的excel表格中BS站点的经纬度，确定仿真BS的站点位置
+        data2 = readtable('7个4.9G站点.xlsx');
+        info = data2(:, [9, 10]);
+        info = table2array(info);
+        pos = [];
+        for i = 1:length(info)
+            if(ismember(info(i, 1), pos))
+                continue;
+            else
+                pos = [pos;info(i, :)];
+            end
         end
         
-        tmp_gridx(tmp_shift_idx,:) = tmp_gridx(tmp_shift_idx,:) + 0.5;%转换
-        
-        rot = @(w_) [cos(w_),-sin(w_);sin(w_),cos(w_)]; %rot是一个函数，w_是其输入参数，函数的作用是产生一个矩阵 顺时针旋转w_
-        for i_ = 1:7
-            tmp_hex(i_,:) = ((n_rings+0.5)*rot(pi/3)^(i_-1)*[1;0]).'; % 乘[1;0]表示只取第一列
-        end
-        
-        tmp_valid_positions = inpolygon(tmp_gridx,tmp_gridy,tmp_hex(:,1),tmp_hex(:,2));% tmp_hex是正六边形顶点坐标，inpolygon判断点是否在六边形内
-        tmp_x = tmp_gridx(tmp_valid_positions);
-        tmp_y = tmp_gridy(tmp_valid_positions);
-        
-        for b_ = 1:length(tmp_x)
+        for b_ = 1:length(pos)
             eNodeB_sites(b_)           = network_elements.eNodeB_site;
             eNodeB_sites(b_).id        = b_;
-            eNodeB_sites(b_).pos       = [tmp_x(b_)*ISD tmp_y(b_)*ISD];
-            pos(:, b_) = [tmp_x(b_)*ISD tmp_y(b_)*ISD];
-            SYS_config.eNodeB_pos(b_, :) = [tmp_x(b_)*ISD tmp_y(b_)*ISD];
+%             eNodeB_sites(b_).pos       = [tmp_x(b_)*ISD tmp_y(b_)*ISD];
+            eNodeB_sites(b_).pos       = latlon_to_xy(pos(b_, :));
+            pos_eNodeB(b_, :) = eNodeB_sites(b_).pos;
+            SYS_config.eNodeB_pos(b_, :) = eNodeB_sites(b_).pos;
             eNodeB_sites(b_).site_type = 'macro';
             % 保存扇区中心，用于画拓扑
             sector_centre(1).pos = [eNodeB_sites(b_).pos(1)+ISD/3 eNodeB_sites(b_).pos(2)];% 计算方法是根据六边形的性质来的 正右方 ISD/3
@@ -66,7 +80,7 @@ switch SYS_config.scene_type
             sector_centre(3).pos = [eNodeB_sites(b_).pos(1)-(ISD/3)/2 eNodeB_sites(b_).pos(2)-(ISD/3)/2*(3^0.5)];%正右方顺时针旋转60度 ISD/3 顺时针旋转30度
             eNodeB_sites(b_).sector_centre = sector_centre;
         end
-%         scatter(pos(1,:), pos(2, :));
+%         scatter(pos_eNodeB(:, 1), pos_eNodeB(:, 2), "filled", 'r');
         % 第一个系统的wraparound基站
         if SYS_config.isWraparound 
             current_enb = b_;
@@ -252,36 +266,36 @@ switch SYS_config.scene_type
             % 确定微基站的部署范围
             for s_ = 1:3*length(tmp_x)
                 micro_centre = [sector_centre(s_).pos(1)-(ISD/3)/2/2 sector_centre(s_).pos(2)+(ISD/3)/2/2*(3^0.5)];% 宏小区中心算出微小区中心
-                x = micro_centre(1) + UMi_r * cos(theta);% 按极坐标运算得到微小区基站位置
+                tmp = micro_centre(1) + UMi_r * cos(theta);% 按极坐标运算得到微小区基站位置
                 y = micro_centre(2) + UMi_r * sin(theta);
                 index = NR_randperm(361,1);
                 eNodeB_sites(b_)           = network_elements.eNodeB_site;
                 eNodeB_sites(b_).id        = b_;
-                eNodeB_sites(b_).pos       = [x(index) y(index)];
+                eNodeB_sites(b_).pos       = [tmp(index) y(index)];
                 eNodeB_sites(b_).parent_centre_pos = micro_centre;
                 eNodeB_sites(b_).site_type = 'micro';
                 eNodeB_sites(b_).sector_centre = sector_centre(s_);
                 b_ = b_+1;
                 
                 micro_centre = [sector_centre(s_).pos(1)-(ISD/3)/2/2 sector_centre(s_).pos(2)-(ISD/3)/2/2*(3^0.5)];
-                x = micro_centre(1) + UMi_r * cos(theta);
+                tmp = micro_centre(1) + UMi_r * cos(theta);
                 y = micro_centre(2) + UMi_r * sin(theta);
                 index = NR_randperm(361,1);
                 eNodeB_sites(b_)           = network_elements.eNodeB_site;
                 eNodeB_sites(b_).id        = b_;
-                eNodeB_sites(b_).pos       = [x(index) y(index)];
+                eNodeB_sites(b_).pos       = [tmp(index) y(index)];
                 eNodeB_sites(b_).parent_centre_pos = micro_centre;
                 eNodeB_sites(b_).site_type = 'micro';
                 eNodeB_sites(b_).sector_centre = sector_centre(s_);
                 b_ = b_+1;
                 
                 micro_centre = [sector_centre(s_).pos(1)+(ISD/3)/2 sector_centre(s_).pos(2)];
-                x = micro_centre(1) + UMi_r * cos(theta);
+                tmp = micro_centre(1) + UMi_r * cos(theta);
                 y = micro_centre(2) + UMi_r * sin(theta);
                 index = NR_randperm(361,1);
                 eNodeB_sites(b_)           = network_elements.eNodeB_site;
                 eNodeB_sites(b_).id        = b_;
-                eNodeB_sites(b_).pos       = [x(index) y(index)];
+                eNodeB_sites(b_).pos       = [tmp(index) y(index)];
                 eNodeB_sites(b_).parent_centre_pos = micro_centre;
                 eNodeB_sites(b_).site_type = 'micro';
                 eNodeB_sites(b_).sector_centre = sector_centre(s_);
@@ -294,36 +308,36 @@ switch SYS_config.scene_type
                     case 'UMI'
                         for s_ = 1:3*length(tmp_x)
                             micro_centre = [sector_centre(s_).pos(1)-(ISD/3)/2/2 sector_centre(s_).pos(2)+(ISD/3)/2/2*(3^0.5)];
-                            x = micro_centre(1) + UMi_r * cos(theta);
+                            tmp = micro_centre(1) + UMi_r * cos(theta);
                             y = micro_centre(2) + UMi_r * sin(theta);
                             index = NR_randperm(361,1);
                             eNodeB_sites(b_)           = network_elements.eNodeB_site;
                             eNodeB_sites(b_).id        = b_;
-                            eNodeB_sites(b_).pos       = [x(index) y(index)];
+                            eNodeB_sites(b_).pos       = [tmp(index) y(index)];
                             eNodeB_sites(b_).parent_centre_pos = micro_centre;
                             eNodeB_sites(b_).site_type = 'micro';
                             eNodeB_sites(b_).sector_centre = sector_centre(s_);
                             b_ = b_+1;
                             
                             micro_centre = [sector_centre(s_).pos(1)-(ISD/3)/2/2 sector_centre(s_).pos(2)-(ISD/3)/2/2*(3^0.5)];
-                            x = micro_centre(1) + UMi_r * cos(theta);
+                            tmp = micro_centre(1) + UMi_r * cos(theta);
                             y = micro_centre(2) + UMi_r * sin(theta);
                             index = NR_randperm(361,1);
                             eNodeB_sites(b_)           = network_elements.eNodeB_site;
                             eNodeB_sites(b_).id        = b_;
-                            eNodeB_sites(b_).pos       = [x(index) y(index)];
+                            eNodeB_sites(b_).pos       = [tmp(index) y(index)];
                             eNodeB_sites(b_).parent_centre_pos = micro_centre;
                             eNodeB_sites(b_).site_type = 'micro';
                             eNodeB_sites(b_).sector_centre = sector_centre(s_);
                             b_ = b_+1;
                             
                             micro_centre = [sector_centre(s_).pos(1)+(ISD/3)/2 sector_centre(s_).pos(2)];
-                            x = micro_centre(1) + UMi_r * cos(theta);
+                            tmp = micro_centre(1) + UMi_r * cos(theta);
                             y = micro_centre(2) + UMi_r * sin(theta);
                             index = NR_randperm(361,1);
                             eNodeB_sites(b_)           = network_elements.eNodeB_site;
                             eNodeB_sites(b_).id        = b_;
-                            eNodeB_sites(b_).pos       = [x(index) y(index)];
+                            eNodeB_sites(b_).pos       = [tmp(index) y(index)];
                             eNodeB_sites(b_).parent_centre_pos = micro_centre;
                             eNodeB_sites(b_).site_type = 'micro';
                             eNodeB_sites(b_).sector_centre = sector_centre(s_);
@@ -584,12 +598,12 @@ switch SYS_config.scene_type
                 % 确定微基站的部署范围
                 for s_ = 1:3*length(tmp)
                     micro_centre = [sector_centre(s_).pos(1)-(ISD/3)/2/2 sector_centre(s_).pos(2)+(ISD/3)/2/2*(3^0.5)];
-                    x = micro_centre(1) + UMi_r * cos(theta);
+                    tmp = micro_centre(1) + UMi_r * cos(theta);
                     y = micro_centre(2) + UMi_r * sin(theta);
                     index = randperm(361,1);
                     eNodeB_sites(b_)           = network_elements.eNodeB_site;
                     eNodeB_sites(b_).id        = b_;
-                    eNodeB_sites(b_).pos       = [x(index) y(index)];
+                    eNodeB_sites(b_).pos       = [tmp(index) y(index)];
                     eNodeB_sites(b_).parent_centre_pos = micro_centre;
                     eNodeB_sites(b_).site_type = 'micro';
                     eNodeB_sites(b_).sector_centre = sector_centre(s_);
@@ -597,12 +611,12 @@ switch SYS_config.scene_type
                     b_ = b_+1;
                     
                     micro_centre = [sector_centre(s_).pos(1)-(ISD/3)/2/2 sector_centre(s_).pos(2)-(ISD/3)/2/2*(3^0.5)];
-                    x = micro_centre(1) + UMi_r * cos(theta);
+                    tmp = micro_centre(1) + UMi_r * cos(theta);
                     y = micro_centre(2) + UMi_r * sin(theta);
                     index = randperm(361,1);
                     eNodeB_sites(b_)           = network_elements.eNodeB_site;
                     eNodeB_sites(b_).id        = b_;
-                    eNodeB_sites(b_).pos       = [x(index) y(index)];
+                    eNodeB_sites(b_).pos       = [tmp(index) y(index)];
                     eNodeB_sites(b_).parent_centre_pos = micro_centre;
                     eNodeB_sites(b_).site_type = 'micro';
                     eNodeB_sites(b_).sector_centre = sector_centre(s_);
@@ -610,12 +624,12 @@ switch SYS_config.scene_type
                     b_ = b_+1;
                     
                     micro_centre = [sector_centre(s_).pos(1)+(ISD/3)/2 sector_centre(s_).pos(2)];
-                    x = micro_centre(1) + UMi_r * cos(theta);
+                    tmp = micro_centre(1) + UMi_r * cos(theta);
                     y = micro_centre(2) + UMi_r * sin(theta);
                     index = randperm(361,1);
                     eNodeB_sites(b_)           = network_elements.eNodeB_site;
                     eNodeB_sites(b_).id        = b_;
-                    eNodeB_sites(b_).pos       = [x(index) y(index)];
+                    eNodeB_sites(b_).pos       = [tmp(index) y(index)];
                     eNodeB_sites(b_).parent_centre_pos = micro_centre;
                     eNodeB_sites(b_).site_type = 'micro';
                     eNodeB_sites(b_).sector_centre = sector_centre(s_);

@@ -27,6 +27,20 @@ end
 
 %% 创建用户
 [UEs] = NR_generate_users(SYS_config,eNodeB_sites,eNodeB_sectors,networkPathlossMap,networkClock);
+eNodeB_pos = [];
+for i = 1:length(eNodeB_sites)
+    eNodeB_pos = [eNodeB_pos;eNodeB_sites(i).pos];
+end
+UE_pos = [];
+for i = 1:length(UEs)
+    UE_pos = [UE_pos;UEs(i).pos];
+end
+
+% scatter(eNodeB_pos(:,1), eNodeB_pos(:, 2));
+% hold on;
+% scatter(UE_pos(:,1), UE_pos(:, 2));
+% hold off;
+% axis equal;
 
 if isempty(UEs)
     warning('No UEs generated.');
@@ -47,8 +61,10 @@ else
         
         % 获取UE其他参数（RB分配表、高度、旋转角）
         UEs(u_).RB_grid = UEs(u_).downlink_channel.RB_grid;
-        UEs(u_).height = UEs(u_).downlink_channel.UE_height;
-        UEs(u_).orientation = UEs(u_).downlink_channel.UE_orientation;
+%         UEs(u_).height = UEs(u_).downlink_channel.UE_height;
+        UEs(u_).height = SYS_config.UE_height;
+        UEs(u_).orientation = 0;
+%         UEs(u_).orientation = UEs(u_).downlink_channel.UE_orientation;
     end
     
     %% 打印eNodeB

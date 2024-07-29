@@ -425,8 +425,8 @@ classdef UE < handle
             interfering_eNodeBs = obj.attached_eNodeB.in_interf_eNodeB_sectors;% 得到victim系统干扰小区
             another_interfering_eNodeBs = obj.attached_eNodeB.ad_interf_eNodeB_sectors; % 得到aggressor系统干扰小区
             there_are_interferers = ~isempty(interfering_eNodeBs);
-
-            obj.penetration_loss = obj.downlink_channel.macroscopic_penetration_loss; % 穿损
+            obj.penetration_loss = 0;
+%             obj.penetration_loss = obj.downlink_channel.macroscopic_penetration_loss; % 穿损
 
             d2d = pdist2(obj.attached_site.pos, obj.pos,'Euclidean');
             d3d = sqrt(d2d^2 + (obj.height - obj.attached_eNodeB.tx_height)^2);
@@ -464,7 +464,7 @@ classdef UE < handle
             user_macroscopic_pathloss        = macroscopic_pathloss ;   % 传输损耗
             user_macroscopic_pathloss_linear = 10^(0.1*user_macroscopic_pathloss);% 转换为线性值
             user_macroscopic_pathloss_linear2 = 10^(0.1*macroscopic_pathloss2);% 转换为线性值
-            user_shadow_fading_loss          = obj.downlink_channel.shadow_fading_pathloss;% 阴影衰落
+%             user_shadow_fading_loss          = obj.downlink_channel.shadow_fading_pathloss;% 阴影衰落
             user_shadow_fading_loss = 0;
             user_shadow_fading_loss_linear   = 10^(0.1*user_shadow_fading_loss); % 转换为线性值
 
@@ -546,7 +546,7 @@ classdef UE < handle
 %                 macroscopic_pathloss2_het = macroscopic_pathloss2_het(3:3:end);
 
                 interfering_macroscopic_pathloss_eNodeB        = macroscopic_pathloss_het ;%干扰路损（求位置时的
-                interfering_shadow_fading_loss                 = obj.downlink_channel.interfering_shadow_fading_pathloss(parent_sites_id);
+%                 interfering_shadow_fading_loss                 = obj.downlink_channel.interfering_shadow_fading_pathloss(parent_sites_id);
                 interfering_shadow_fading_loss = 0;
                 interfering_CL = interfering_macroscopic_pathloss_eNodeB + interfering_shadow_fading_loss;
 

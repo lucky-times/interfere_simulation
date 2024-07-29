@@ -24,20 +24,22 @@ classdef BSAntenna < antennas.antenna
             %obj.max_antenna_gain =max_gain;
             obj.Nv=Nv;
             obj.Nh=Nh;
-            obj.theta_3db=6;
-            obj.phi_3db=120; %后续讨论，单排与多排波束赋型的3dB水平波宽与最大天线增益改成了一样。校准时多排的波束赋型中最大天线增益取值为7.5,3dB波宽取值为80度
-            obj.Am=30;
-            obj.SLAv=30;
+            obj.phi_3db = 15;
+            obj.theta_3db = 6;
             obj.N_beam=N_beam;
             obj.v_spacing=0.5;
             obj.h_spacing=0.5;
             obj.pattern_is_3D = true;
-            if obj.Nh==1
-                %               obj.max_antenna_gain=9; %单柱/dBi
-                obj.phi_3db=90;             %degree
-            else
-                obj.max_antenna_gain = 8;
-            end
+            obj.max_antenna_gain = 0;
+            obj.Am = 30;
+            obj.SLAv = 30;
+
+            %             if obj.Nh==1
+            %                 %               obj.max_antenna_gain=9; %单柱/dBi
+            %                 obj.phi_3db=90;             %degree
+            %             else
+            %                 obj.max_antenna_gain = 0;
+            %             end
 
         end
         function print(obj)
@@ -51,47 +53,93 @@ classdef BSAntenna < antennas.antenna
         %% 垂直方向天线单元增益
         function v_gain=vertical_gain(obj,theta)
             v_gain=-min(12*((theta-90)/obj.theta_3db).^2,obj.SLAv);
+%             v_gain=-min(12*((theta)/obj.theta_3db).^2,obj.SLAv);
         end
-          %% 天线有4个波束，总的天线单元图谱%         
-          function Ae=elementPattern(obj,theta,phi, tilt)
+        % 天线有4个波束，总的天线单元图谱%
+        function Ae=elementPattern(obj,theta,phi, tilt)
+            %转化垂直角度
             theta_pre = 90 - theta;
-            theta_pro = theta + 90;            
-            theta2 = zeros(size(theta));
-            phi2 = zeros(size(phi));
-            for i = 1:size(theta, 1)
-                for j = 1:size(theta, 2)
-                    switch floor(theta_pre(i, j)/6)
-                        case 0
-                            [phi2(i,j), theta2(i,j)] = utils.miscUtils.global2local(phi(i,j), theta_pro(i,j), 0, 0, 0);
-                        case 1
-                            [phi2(i,j), theta2(i,j)] = utils.miscUtils.global2local(phi(i,j), theta_pro(i,j), 0, 6, 0);
-                        case 2
-                            [phi2(i,j), theta2(i,j)] = utils.miscUtils.global2local(phi(i,j), theta_pro(i,j), 0, 12, 0);
-                        case 3
-                            [phi2(i,j), theta2(i,j)] = utils.miscUtils.global2local(phi(i,j), theta_pro(i,j), 0, 18, 0);
-                    end
+            %             theta_pro = theta + 90;
+            %             theta2 = zeros(size(theta));
+            %             phi2 = zeros(size(phi));
+            %             for i = 1:size(theta, 1)
+            %                 for j = 1:size(theta, 2)
+            %                     switch floor(theta_pre(i, j)/6)
+            %                         case 0
+            %                             [phi2(i,j), theta2(i,j)] = utils.miscUtils.global2local(phi(i,j), theta_pro(i,j), 0, 0, 0);
+            %                         case 1
+            %                             [phi2(i,j), theta2(i,j)] = utils.miscUtils.global2local(phi(i,j), theta_pro(i,j), 0, 6, 0);
+            %                         case 2
+            %                             [phi2(i,j), theta2(i,j)] = utils.miscUtils.global2local(phi(i,j), theta_pro(i,j), 0, 12, 0);
+            %                         case 3
+            %                             [phi2(i,j), theta2(i,j)] = utils.miscUtils.global2local(phi(i,j), theta_pro(i,j), 0, 18, 0);
+            %                     end
+            %                 end
+            %             end
+            %控制垂直面有4个波束，以-3度为起点
+            if abs(theta_pre)>3
+                v = ceil((theta_pre-3)/6);
+                if v > 3
+                    v = 3;
                 end
+                theta2 = theta+v*6;
+            else
+                theta2 = theta;
             end
-            theta2 = theta2 - 90;
+
+            %控制水平面有8个波束，以0为起点
+            if abs(phi)>7.5
+                h = ceil((abs(phi)-7.5)/15);
+                if h > 3
+                    h = 3;
+                end
+                phi2 = phi - sign(phi).*h*15;
+            else
+                phi2 = phi;
+            end
             Ae=obj.max_antenna_gain-min(-(obj.horizontal_gain(phi2)+obj.vertical_gain(theta2)),obj.Am);
-%             Ae = 8;
         end
 
-            %% 只有一个波束的天线单元增益
-%             function Ae=elementPattern(obj,theta,phi,tilt)
-%             theta = theta + 90;            
-%             theta2 = zeros(size(theta));
-%             phi2 = zeros(size(phi));
-% 
-%             for i = 1:size(theta, 1)
-%                 for j = 1:size(theta, 2)
-%                     [phi2(i,j), theta2(i,j)] = utils.miscUtils.global2local(phi(i,j), theta(i,j), 0, tilt, 0);
-%                 end
-%             end
-%             theta2 = theta2 - 90;
-% 
-%             Ae=obj.max_antenna_gain-min(-(obj.horizontal_gain(phi2)+obj.vertical_gain(theta2)),obj.Am);
-%         end
+
+        %         function Ae=elementPattern(obj,theta,phi, tilt)
+        %             %控制垂直面有4个波束，以-3度为起点
+        %             if abs(theta)>3
+        %                 v = ceil((theta-3)/6);
+        %                 if v > 3
+        %                     v = 3;
+        %                 end
+        %                 theta2 = theta-v*6;
+        %             else
+        %                 theta2 = theta;
+        %             end
+        %
+        %             %控制水平面有8个波束，以0为起点
+        %             if abs(phi)>7.5
+        %                 h = ceil((abs(phi)-7.5)/15);
+        %                 if h > 3
+        %                     h = 3;
+        %                 end
+        %                 phi2 = phi - sign(phi).*h*15;
+        %             else
+        %                 phi2 = phi;
+        %             end
+        %             Ae=obj.max_antenna_gain-min(-(obj.horizontal_gain(phi2)+obj.vertical_gain(theta2)),obj.Am);
+        %         end
+        %% 只有一个波束的天线单元增益
+        %             function Ae=elementPattern(obj,theta,phi,tilt)
+        %             theta = theta + 90;
+        %             theta2 = zeros(size(theta));
+        %             phi2 = zeros(size(phi));
+        %
+        %             for i = 1:size(theta, 1)
+        %                 for j = 1:size(theta, 2)
+        %                     [phi2(i,j), theta2(i,j)] = utils.miscUtils.global2local(phi(i,j), theta(i,j), 0, tilt, 0);
+        %                 end
+        %             end
+        %             theta2 = theta2 - 90;
+        %
+        %             Ae=obj.max_antenna_gain-min(-(obj.horizontal_gain(phi2)+obj.vertical_gain(theta2)),obj.Am);
+        %         end
 
         %% 波束赋型增益初版，（后期为了多波束的延展性使用了37.842中IBD3模型，见beam_gain函数）
         function antenna_gain=gain(obj,theta,phi,down_tilt_steering,horizontal_steering) %仰角，方位角，电气下倾角，电气水平倾角
