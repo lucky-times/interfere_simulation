@@ -52,13 +52,13 @@ classdef BSAntenna < antennas.antenna
         end
         %% 垂直方向天线单元增益
         function v_gain=vertical_gain(obj,theta)
-            v_gain=-min(12*((theta-90)/obj.theta_3db).^2,obj.SLAv);
+            v_gain=-min(12*((theta-93)/obj.theta_3db).^2,obj.SLAv);
 %             v_gain=-min(12*((theta)/obj.theta_3db).^2,obj.SLAv);
         end
         % 天线有4个波束，总的天线单元图谱%
         function Ae=elementPattern(obj,theta,phi, tilt)
             %转化垂直角度
-            theta_pre = 90 - theta;
+            theta_pre = 93 - theta;
             %             theta_pro = theta + 90;
             %             theta2 = zeros(size(theta));
             %             phi2 = zeros(size(phi));
@@ -76,7 +76,8 @@ classdef BSAntenna < antennas.antenna
             %                     end
             %                 end
             %             end
-            %控制垂直面有4个波束，以-3度为起点
+            %控制垂直面有4个波束，以-3度为起点？还是以0度为起点，共24度
+%             theta = abs(theta);
             if abs(theta_pre)>3
                 v = ceil((theta_pre-3)/6);
                 if v > 3
@@ -87,7 +88,7 @@ classdef BSAntenna < antennas.antenna
                 theta2 = theta;
             end
 
-            %控制水平面有8个波束，以0为起点
+            %控制水平面有7个波束，以0为起点，覆盖范围从-52.5到52.5度
             if abs(phi)>7.5
                 h = ceil((abs(phi)-7.5)/15);
                 if h > 3
@@ -97,7 +98,7 @@ classdef BSAntenna < antennas.antenna
             else
                 phi2 = phi;
             end
-            Ae=obj.max_antenna_gain-min(-(obj.horizontal_gain(phi2)+obj.vertical_gain(theta2)),obj.Am);
+            Ae = obj.max_antenna_gain-min(-(obj.horizontal_gain(phi2)+obj.vertical_gain(theta2)),obj.Am);
         end
 
 
