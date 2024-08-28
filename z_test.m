@@ -43,14 +43,14 @@ SYS_config.antenna_element = [8,16];% UMi UMa原来是8,16
 SYS_config.antenna_element_InH = [2,2];% InH 30G原来是4,8
 SYS_config.antenna_theta_3db = 6;%度
 
-SYS_config.bandwidth = 200e6; %仿真系统的带宽
+SYS_config.bandwidth = 100e6; %仿真系统的带宽
 SYS_config.UE_tx_power = 10^2.3/1000; %UE的发射功率（单位W，此处为23dBm）
 SYS_config.Gama = 1; %功控中的gamma参数
 SYS_config.n_UE_served_per_BS = 1; % 每个BS同一时间服务的UE数
 
 SYS_config.antenna.antenna_gain_pattern = 'NRAntennaBeamforming'; %波束赋型的类型（可以在此处增加扩展其他的波束赋型图案）
-SYS_config.UE_height = 200;%UAV飞行高度
-SYS_config.UE_r = 1200; %UAV距中心基站的极径
+SYS_config.UE_height = 200;%UAV飞行高度 100 200 300 500
+SYS_config.UE_r = 800; %UAV距中心基站的极径  100 300 500 800 1200
 str = sprintf("h=%d, r=%d", SYS_config.UE_height, SYS_config.UE_r);
 disp(str)
 % SYS_config.eNodeB_pos = zeros(19,2);
@@ -63,7 +63,7 @@ SYS_config.macroscopic_pathloss_model2 = 'TS36942'; %第二个系统路损模型的选择，T
 
 SYS_config.asynchronization_switch=0;%判断干扰类型，0表示同步，1表示异步，2表示各50%
 
-SYS_config.cable_loss=2; %天线馈线损耗
+SYS_config.cable_loss=0; %天线馈线损耗
 SYS_config.scene_type = 'UMA'; %场景参数的选择
 SYS_config.beam_loss=0; %波束损耗
 SYS_config.tilt = 0; %基站天线上倾角

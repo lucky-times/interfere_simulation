@@ -15,10 +15,35 @@ function [ UEs ] = NR_generate_users(SYS_config,eNodeB_sites,eNodeB_sectors,netw
 % UE_spatial_distribution = spatial_distributions.constantUesPerCellUeSpatialDistribution(networkPathlossMap,eNodeB_sites,eNodeB_sectors,SYS_config);% 实例化UE撒点方式
 % UE_positions = UE_spatial_distribution.generate_UE_positions(SYS_config);% UE_positions是所有UE的位置矩阵，这是还没有UE实体
 
-r = SYS_config.UE_r;
-step = 0.5;
-theta = 0:step:360-step;
-UE_positions = [r*cosd(theta); r*sind(theta)]';
+% %以中心点为基准，创建半径为SYS_config.UE_r，间隔为step度的UE飞行圆
+% r = SYS_config.UE_r;
+% step = 0.5;
+% theta = 0:step:360-step;
+% UE_positions = [r*cosd(theta); r*sind(theta)]';
+
+str = 'D:\OneDrive\OneDrive - bupt.edu.cn\桌面\中国移动研究院\外场测试数据\7.4.2多层窄波束配置--蜂窝三扇区组网\7.4.2多层窄波束配置--蜂窝三扇区组网-1km站间距-飞行高度200米-加扰50%.csv';
+data = readtable(str);
+info = data(:, [3,4,5,8]);% 高度、经度、纬度、归属PCI
+info = table2array(info);
+temp = info((info(:, 1)>=190 & info(:, 1)<=215), :);% 高度、经度、纬度、SINR值
+r = 1251:1804;
+UE_height = temp(r, 1);
+% 读取经度、纬度
+longlat = temp(r, [2, 3]);
+UE_positions = zeros(size(longlat));
+figure;
+hold on;
+for i = 1:length(longlat)
+    UE_positions(i, :) = latlon_to_xy(longlat(i, :));
+    scatter(UE_positions(i, 1), UE_positions(i, 2));
+end
+axis equal;
+title('UAV位置分布')
+
+figure
+plot(1:length(info(:, 4)), info(:, 4));
+ylabel('PCI')
+title('UAV归属小区（实测）')
 
 %% 创建用户
 UEs = network_elements.UE;
@@ -27,6 +52,8 @@ for u_ = 1:size(UE_positions,1)
     % 用户基本配置
     UEs(u_)     = network_elements.UE; %实体建立
     UEs(u_).id  = u_; %用户id设置
+%     UEs(u_).height = SYS_config.UE_height;
+    UEs(u_).height = UE_height(i);
 %     UEs(u_).pos = NR_common_pixel_to_pos( UE_positions(u_,:), networkPathlossMap.coordinate_origin, networkPathlossMap.data_res); %用户位置配置
     UEs(u_).pos = UE_positions(u_,:);
     UE_pos_vector(u_,:) = UEs(u_).pos;
@@ -92,41 +119,33 @@ if ~no_UEs
     for u_ = 1:length(UEs)     
         a = 1;
         % 根据基站服务的区域分配服务基站
-        eNodeB_id = NR_calculate_attached_sector(SYS_config, BS_pos, UEs(u_).pos);
-%         if theta(u_) <= 120
-%            eNodeB_id = 31;
-%         elseif theta(u_) <= 240
-%            eNodeB_id = 32;
-%         else
-%            eNodeB_id = 33;
-%         end
-%         [ ~,~,eNodeB_id]    = networkPathlossMap.cell_assignment(SYS_config,u_,UEs(u_).pos,num_first_UEs);%将UE所在的扇区和eNB找出来
-        
+        id_x = NR_calculate_attached_sector(SYS_config, eNodeB_sites,eNodeB_sectors, UEs(u_));     
        % 将UE归附于相应的小区
-        eNodeB_sectors(eNodeB_id).attachUser(UEs(u_));
+        eNodeB_sectors(id_x).attachUser(UEs(u_));
         UE_positions_m(u_,:) = UEs(u_).pos;
         
         % 确定统计哪些UE
-        if SYS_config.isWraparound
-            compute_only_UEs_from_this_eNodeBs = 1:57;% 只统计被1到19号基站（1到57号小区）服务的UE，下面类似
-        else
-            if SYS_config.isDouble
-                if SYS_config.isS2F % 异构中大场景到小场景与小场景到大场景
-                    compute_only_UEs_from_this_eNodeBs = 1:num_first_sectors;% 求大场景对小场景的干扰
-                else
-                    compute_only_UEs_from_this_eNodeBs = num_first_sectors+1:length(eNodeB_sectors);% 求小场景对大场景的干扰
-                end
-            else
-                compute_only_UEs_from_this_eNodeBs = 1:length(eNodeB_sectors);
-            end
-        end
-        if isempty(find(UEs(u_).attached_eNodeB.eNodeB_id == compute_only_UEs_from_this_eNodeBs,1))
-            % 不统计该UE
-            UEs(u_).deactivate_UE = true;%关闭UE统计
-        else
-            % 统计该UE
-            UEs(u_).deactivate_UE = false;
-        end
+%         if SYS_config.isWraparound
+%             compute_only_UEs_from_this_eNodeBs = 1:57;% 只统计被1到19号基站（1到57号小区）服务的UE，下面类似
+%         else
+%             if SYS_config.isDouble
+%                 if SYS_config.isS2F % 异构中大场景到小场景与小场景到大场景
+%                     compute_only_UEs_from_this_eNodeBs = 1:num_first_sectors;% 求大场景对小场景的干扰
+%                 else
+%                     compute_only_UEs_from_this_eNodeBs = num_first_sectors+1:length(eNodeB_sectors);% 求小场景对大场景的干扰
+%                 end
+%             else
+%                 compute_only_UEs_from_this_eNodeBs = 1:length(eNodeB_sectors);
+%             end
+%         end
+%         if isempty(find(UEs(u_).attached_eNodeB.eNodeB_id == compute_only_UEs_from_this_eNodeBs,1))
+%             % 不统计该UE
+%             UEs(u_).deactivate_UE = true;%关闭UE统计
+%         else
+%             % 统计该UE
+%             UEs(u_).deactivate_UE = false;
+%         end、
+        UEs(u_).deactivate_UE = false;
     end
 
 end

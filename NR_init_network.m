@@ -35,6 +35,11 @@ end
 % 给基站其他参数赋值
 s_idx   = 1;
 eNodeB_sectors = network_elements.eNodeB_sector;  % 初始化,eNodeBs为eNodeB_sector的对象
+data2 = readtable('7个4.9G站点.xlsx');
+% 小区PCI、小区标识、方位角、天线高度
+info = data2(:, [21, 23, 31, 32]);
+info2 = table2array(info);
+
 
 for b_ = 1:length(eNodeB_sites)-num_hetnet_sites
    % 创建小区实体
@@ -42,10 +47,13 @@ for b_ = 1:length(eNodeB_sites)-num_hetnet_sites
     for s_ = 1:length(SYS_config.sector_azimuths)
         eNodeB_sites(b_).sectors(s_)               = network_elements.eNodeB_sector;
         eNodeB_sites(b_).sectors(s_).parent_eNodeB = eNodeB_sites(b_);
-        eNodeB_sites(b_).sectors(s_).id            = s_; %配置小区id（相对于本eNodeB而言，取值为1,2,3）
+        eNodeB_sites(b_).sectors(s_).id            = info2(s_idx, 2); %配置小区id（相对于本eNodeB而言，取值为1,2,3）
+        eNodeB_sites(b_).sectors(s_).eNodeB_id     = info2(s_idx, 1); %配置小区在全部sectors中的PCI
+        eNodeB_sites(b_).sectors(s_).tx_height     = info2(s_idx, 4); %配置小区天线高度
+%         eNodeB_sites(b_).sectors(s_).tx_height     = 25;
         switch SYS_config.scene_type
             case {'UMA','RMa'}
-                eNodeB_sites(b_).sectors(s_).azimuth       = utils.miscUtils.wrapTo359(SYS_config.antenna_azimuth_offsett + SYS_config.sector_azimuths(s_));
+                eNodeB_sites(b_).sectors(s_).azimuth       = utils.miscUtils.wrapTo359(SYS_config.antenna_azimuth_offsett + info2(s_idx, 3));
             case {'UMI','UMa_to_UMi'}
                 if ~SYS_config.isManhattan %Rand drop 的天线指向覆盖圈圆心
                     eNodeB_sites(b_).sectors(s_).azimuth = atan2(eNodeB_sites(b_).parent_centre_pos(2) -eNodeB_sites(b_).pos(2),eNodeB_sites(b_).parent_centre_pos(1)-eNodeB_sites(b_).pos(1))./pi*180;
@@ -58,7 +66,7 @@ for b_ = 1:length(eNodeB_sites)-num_hetnet_sites
         eNodeB_sites(b_).sectors(s_).max_power     = eNodeB_sector_tx_power; %配置基站的最大发射功率
         eNodeB_sites(b_).sectors(s_).antenna_type  = SYS_config.antenna.antenna_gain_pattern; % 天线类型
         
-        eNodeB_sites(b_).sectors(s_).eNodeB_id     = s_idx; %设置小区的全局id号
+%         eNodeB_sites(b_).sectors(s_).eNodeB_id     = s_idx; %设置小区的全局id号
         eNodeB_sectors(s_idx) = eNodeB_sites(b_).sectors(s_); %将上面是通过eNodeB_sites(b_).sectors(s_)进操作的，现在将其赋给eNodeB_sectors，以后可以通过eNodeB_sectors进行对扇区的操作
         
          % 为基站配置天线

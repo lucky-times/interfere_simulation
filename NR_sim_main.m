@@ -35,12 +35,13 @@ UE_pos = [];
 for i = 1:length(UEs)
     UE_pos = [UE_pos;UEs(i).pos];
 end
-
-% scatter(eNodeB_pos(:,1), eNodeB_pos(:, 2));
-% hold on;
-% scatter(UE_pos(:,1), UE_pos(:, 2));
-% hold off;
-% axis equal;
+figure;
+scatter(eNodeB_pos(:,1), eNodeB_pos(:, 2));
+hold on;
+scatter(UE_pos(:,1), UE_pos(:, 2));
+hold off;
+axis equal;
+title('拓扑分布图');
 
 if isempty(UEs)
     warning('No UEs generated.');
@@ -146,12 +147,17 @@ else
                 for i = 1:length(UEs)
                     SINR(i) = UEs(i).wideband_SINR;
                     SINR2(i) = UEs(i).wideband_SINR2;
+                    attached_sector_id(i) = UEs(i).attached_eNodeB.eNodeB_id;
                 end
+                figure;
+                plot(attached_sector_id)
                 x = linspace(0,360,length(UEs));
+                ylabel('PCI')
+                title('UAV归属小区编号（仿真）');
 %                 [~,locs]= findpeaks(SINR);
 %                 x_tick = x(locs);
 %                 y_tick = SINR(locs);
-                fig1 = figure(1);
+                fig1 = figure;
                 plot(x, SINR,LineWidth=2.5);
 %                 hold on;
 %                 plot(x_tick, y_tick, 'ro', LineWidth=2.5)
@@ -162,20 +168,21 @@ else
                 title(str)
 % 
                 str1 = sprintf('pos_r%d_h%d', SYS_config.UE_r, SYS_config.UE_height);
-                saveas(fig1, str1, 'svg');        % 指定路径保存
+%                 saveas(fig1, str1, 'svg');        % 指定路径保存
 
-                fig2 = figure(2);
-                plot(x, SINR2,LineWidth=2.5);
-%                 hold on;
-%                 plot(x_tick, y_tick, 'bo', LineWidth=2.5)
-                xlabel('极角/°')
-                ylabel('SINR/dB')
-%                 str = sprintf('根据论文公式方法计算，基站天线上倾%d度\nUAV极径=%dm，h=%dm', SYS_config.tilt, SYS_config.UE_r, SYS_config.UE_height);
-                str = sprintf('根据论文公式方法计算，基站天线垂直覆盖24度\nUAV极径=%dm，h=%dm', SYS_config.UE_r, SYS_config.UE_height);
-                title(str)
+%                 fig2 = figure;
+%                 plot(x, SINR2,LineWidth=2.5);
+% %                 hold on;
+% %                 plot(x_tick, y_tick, 'bo', LineWidth=2.5)
+%                 xlabel('极角/°')
+%                 ylabel('SINR/dB')
+% %                 str = sprintf('根据论文公式方法计算，基站天线上倾%d度\nUAV极径=%dm，h=%dm', SYS_config.tilt, SYS_config.UE_r, SYS_config.UE_height);
+%                 str = sprintf('根据论文公式方法计算，基站天线垂直覆盖24度\nUAV极径=%dm，h=%dm', SYS_config.UE_r, SYS_config.UE_height);
+%                 title(str)
+% 
+%                 str2 = sprintf('alpha_r%d_h%d', SYS_config.UE_r, SYS_config.UE_height);
+%                 saveas(fig2, str2, 'svg');        % 指定路径保存
 
-                str2 = sprintf('alpha_r%d_h%d', SYS_config.UE_r, SYS_config.UE_height);
-                saveas(fig2, str2, 'svg');        % 指定路径保存
 
                 error('画图已结束')
 

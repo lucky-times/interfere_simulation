@@ -65,7 +65,8 @@ switch SYS_config.scene_type
                 pos = [pos;info(i, :)];
             end
         end
-        
+%         figure;
+%         hold on;
         for b_ = 1:length(pos)
             eNodeB_sites(b_)           = network_elements.eNodeB_site;
             eNodeB_sites(b_).id        = b_;
@@ -73,6 +74,8 @@ switch SYS_config.scene_type
             eNodeB_sites(b_).pos       = latlon_to_xy(pos(b_, :));
             pos_eNodeB(b_, :) = eNodeB_sites(b_).pos;
             SYS_config.eNodeB_pos(b_, :) = eNodeB_sites(b_).pos;
+%             scatter(eNodeB_sites(b_).pos(1), eNodeB_sites(b_).pos(2));
+%             text(eNodeB_sites(b_).pos(1), eNodeB_sites(b_).pos(2), num2str(b_), 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'left');
             eNodeB_sites(b_).site_type = 'macro';
             % 保存扇区中心，用于画拓扑
             sector_centre(1).pos = [eNodeB_sites(b_).pos(1)+ISD/3 eNodeB_sites(b_).pos(2)];% 计算方法是根据六边形的性质来的 正右方 ISD/3

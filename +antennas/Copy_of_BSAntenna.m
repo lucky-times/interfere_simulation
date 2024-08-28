@@ -1,4 +1,4 @@
-classdef BSAntenna < antennas.antenna
+classdef Copy_of_BSAntenna < antennas.antenna
     %计算单元增益图谱与波束赋型图谱
     properties
         electrical_tilt % 电子下倾角
@@ -19,7 +19,7 @@ classdef BSAntenna < antennas.antenna
 
 
         %% 构造函数
-        function obj = BSAntenna(Nv,Nh,N_beam, tilt)
+        function obj = Copy_of_BSAntenna(Nv,Nh,N_beam, tilt)
             obj.antenna_type = 'NR';
             %obj.max_antenna_gain =max_gain;
             obj.Nv=Nv;
@@ -30,43 +30,52 @@ classdef BSAntenna < antennas.antenna
             obj.v_spacing=0.5;
             obj.h_spacing=0.5;
             obj.pattern_is_3D = true;
-            obj.max_antenna_gain = 20;
+            obj.max_antenna_gain = 0;
             obj.Am = 30;
             obj.SLAv = 30;
+
+            %             if obj.Nh==1
+            %                 %               obj.max_antenna_gain=9; %单柱/dBi
+            %                 obj.phi_3db=90;             %degree
+            %             else
+            %                 obj.max_antenna_gain = 0;
+            %             end
+
         end
         function print(obj)
             fprintf('NR BS antenna with beam-forming\n');
         end
-%         华为所提天线模型：垂直方向4波束，水平方向，下面三个是两波束，45度 3dB带宽，最上面单波束，65度 3dB带宽
-%         % 水平方向天线单元增益
+
+%         %% 水平方向天线单元增益
 %         function h_gain=horizontal_gain(obj,phi)
 %             if phi > 0
-%                 h_gain=-min(12*((phi-22.5)/45).^2,obj.Am);
+%                 h_gain=-min(12*((phi-22.5)/obj.phi_3db).^2,obj.Am);
 %             else 
-%                 h_gain=-min(12*((phi-(-22.5))/45).^2,obj.Am);
+%                 h_gain=-min(12*((phi-(-22.5))/obj.phi_3db).^2,obj.Am);
 %             end
 %         end
 %         function h_gain=horizontal_gain_65(obj,phi)
 %             h_gain=-min(12*(phi/65).^2,obj.Am);
 %         end
-%         % 垂直方向天线单元增益
-%         function v_gain=vertical_gain(obj,theta)
-%             v_gain=-min(12*((theta-93)/6).^2,obj.SLAv);
-%         end
-%         天线有4个波束，总的天线单元图谱%
+        function h_gain=horizontal_gain(obj,phi)
+            h_gain=-min(12*(phi/obj.phi_3db).^2,obj.Am);
+        end
+        %% 垂直方向天线单元增益
+        function v_gain=vertical_gain(obj,theta)
+            v_gain=-min(12*((theta-(-3))/obj.theta_3db).^2,obj.SLAv);
+%             v_gain=-min(12*((theta)/obj.theta_3db).^2,obj.SLAv);
+        end
+%         % 天线有4个波束，总的天线单元图谱%
 %         function Ae=elementPattern(obj,theta,phi, tilt)
-%             水平面有两个波束
 %             phi2 = phi;
-%             转化垂直角度
-%             theta_pre = 93 - theta;
-% 
-%             控制垂直面有4个波束，以-3度为起点，共24度
-%             theta = abs(theta);
+%             %控制垂直面有4个波束，以-3度为起点，共24度
 %             v = ones(size(theta));
-%             if abs(theta_pre)>3
-%                 v = ceil((theta_pre-3)/6);
-%                 v(v>3) = 3;
-%                 theta2 = theta+v*6;
+%             if theta>0
+%                 v = ceil(theta/6);
+%                 if v > 3
+%                     v = 3*ones(size(v));                    
+%                 end
+%                 theta2 = theta-sign(theta).*v*6;
 %             else
 %                 theta2 = theta;
 %             end
@@ -75,37 +84,27 @@ classdef BSAntenna < antennas.antenna
 %             else
 %                 Ae = obj.max_antenna_gain-min(-(obj.horizontal_gain_65(phi2)+obj.vertical_gain(theta2)),obj.Am);
 %             end
+%             
 %         end
 
-        %中兴所提天线模型：垂直方向4波束，水平方向，八波束，15度 3dB带宽，垂直方向，6度 3dB带宽
-        %% 水平方向天线单元增益
-        function h_gain=horizontal_gain(obj,phi)
-            if phi > 0
-                h_gain=-min(12*((phi-7.5)/15).^2,obj.Am);
-            else 
-                h_gain=-min(12*((phi-(-7.5))/15).^2,obj.Am);
-            end
-        end
 
-        %% 垂直方向天线单元增益
-        function v_gain=vertical_gain(obj,theta)
-            v_gain=-min(12*((theta-(93))/6).^2,obj.SLAv);
-        end
         function Ae=elementPattern(obj,theta,phi, tilt)
-            %控制垂直面有4个波束，以-6度为起点，复合3dB波宽24度
-            alpha1 = 90 - theta;
-            if alpha1>0
-                v = ceil((alpha1)/6);
+            %控制垂直面有4个波束，以-3度为起点
+            if theta>0
+                v = ceil((theta)/6);
                 if v > 3
                     v = 3;
                 end
-                theta2 = theta + v*6;               
+                theta2 = theta - v*6;               
             else
                 theta2 = theta;
             end
-
-
-            %控制水平面有8个波束，以0为起点，复合3dB波宽120度
+            
+%             if v > 3
+%                 v = 3;
+%             end
+%             theta2 = theta-v*6;
+            %控制水平面有7个波束，以0为起点
             if abs(phi)>7.5
                 h = ceil((abs(phi)-7.5)/15);
                 if h > 3

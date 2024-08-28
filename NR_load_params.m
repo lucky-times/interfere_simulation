@@ -98,8 +98,8 @@ SYS_config.beam_cache_folder = '.\beam_cache\';
 SYS_config.results_file = 'auto';
 
 %% Values that should not be changed
-SYS_config.antenna_azimuth_offsett = 30;
-
+% SYS_config.antenna_azimuth_offsett = 30;
+SYS_config.antenna_azimuth_offsett = 0;
 %% 下面是以前的LTE_load_params_dependant(SYS_config)函数
 matlab_release                 = version('-release');
 matlab_year                    = str2double(matlab_release(1:(end-1)));

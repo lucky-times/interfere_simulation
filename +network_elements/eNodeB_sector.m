@@ -36,7 +36,7 @@ classdef eNodeB_sector < handle
         frequency_band  % 小区使用的频带
         antenna_name    % 小区的天线名
         antenna_type    % 小区使用的天线类型
-        tx_height = 1.5;% 小区的天线高度
+        tx_height       % 小区的天线高度
         electrical_downtilt % 小区天线的电气下倾角
         mechanical_downtilt % 小区天线的机械下倾角
     end

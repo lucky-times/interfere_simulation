@@ -1,4 +1,4 @@
-classdef UE < handle
+ll'lllclassdef UE < handle
     % UE实体文件
     % 具体功能：用于计算SINR
 
@@ -438,8 +438,8 @@ classdef UE < handle
             alpha = 90 - vertical_angle_grid_el;
             d3d_cos = d2d/cosd(alpha);
             pl2 = 28 + 22*log10(d3d_cos) + 20*log10(frequency);
-
-            angle_grid = (180/pi)*(atan2((obj.pos(2)-obj.attached_site.pos(2)),(obj.pos(1)-obj.attached_site.pos(1))))-obj.attached_eNodeB.azimuth;
+            ang = (180/pi)*(atan2((obj.pos(2)-obj.attached_site.pos(2)),(obj.pos(1)-obj.attached_site.pos(1))));
+            angle_grid = mod(ang, 360)-obj.attached_eNodeB.azimuth;
             horizontal_angle_grid = utils.miscUtils.wrapTo359(angle_grid);
             horizontal_angle_grid_s = utils.miscUtils.wrapTo180(horizontal_angle_grid);
             
@@ -486,6 +486,7 @@ classdef UE < handle
                 parent_sites                            = [interfering_eNodeBs.parent_eNodeB];
                 parent_sites_id                         = [parent_sites.id];
                 interfering_eNodeB_ids                  = [interfering_eNodeBs.eNodeB_id];
+%                 interfering_eNodeB_height               = [interfering_eNodeBs.heighjt];
                 interfering_RB_grids                    = [interfering_eNodeBs.RB_grid];
                 interfering_power_allocations_data      = [interfering_RB_grids.power_allocation];
                 interfering_power_allocations_signaling = [interfering_RB_grids.power_allocation_signaling];
@@ -494,14 +495,15 @@ classdef UE < handle
                 for i = 1:length(parent_sites)
                     interfer_sites_pos(i, :) = parent_sites(i).pos;
                     inteNodeB_azimuth(i) = interfering_eNodeBs(i).azimuth;
+                    interfering_eNodeB_height(i,1) = interfering_eNodeBs(i).tx_height;
                 end
                 d2d_het = pdist2(interfer_sites_pos, obj.pos,'Euclidean');
                 d3d_het = sqrt(d2d_het.^2 + (obj.height - obj.attached_eNodeB.tx_height).^2);
                 distance_het = d3d_het;
                 pl_het = 28 + 22*log10(distance_het) + 20*log10(frequency);
 %                 pl_het(1:2) =[150,150];
-                vertical_angle_grid_el = (180/pi)*(atan2( d2d_het,obj.height-obj.attached_eNodeB.tx_height));
-                vertical_angle_grid_el_ue=(180/pi)*(atan2( d2d_het,obj.attached_eNodeB.tx_height-obj.height));
+                vertical_angle_grid_el = (180/pi)*(atan2( d2d_het,obj.height-interfering_eNodeB_height));
+                vertical_angle_grid_el_ue=(180/pi)*(atan2( d2d_het,interfering_eNodeB_height-obj.height));
 %                 alpha_het = 90 - vertical_angle_grid_el;
 %                 d3d_cos_het = d2d_het./cosd(alpha_het);
                 n_i = d2d_het / d2d;
@@ -510,7 +512,8 @@ classdef UE < handle
                 if sum(pl2_het- pl_het)>10
                     pl2_het- pl_het;
                 end
-                angle_grid = (180/pi)*(atan2((obj.pos(2)-interfer_sites_pos(:,2)),(obj.pos(1)-interfer_sites_pos(:,1))))-inteNodeB_azimuth';
+                ang = (180/pi)*(atan2((obj.pos(2)-interfer_sites_pos(:,2)),(obj.pos(1)-interfer_sites_pos(:,1))));
+                angle_grid = mod(ang, 360)-inteNodeB_azimuth';
 %                 phi = angle_grid;
 %                 phi(1) = phi(1)+120;
 %                 phi(2) = phi(2)+240;
@@ -530,11 +533,13 @@ classdef UE < handle
                 %加上两侧panel随机旋转角后仍要保证总体方位角在-180到180间
                 phi_1 = utils.miscUtils.wrapToAll180(phi_1);
                 phi_2 = utils.miscUtils.wrapToAll180(phi_2);
-
-
-                BS_element_pattern = obj.attached_eNodeB.antenna.elementPattern(vertical_angle_grid_el, horizontal_angle_grid_s, SYS_config.tilt);
-                BS_element_pattern((90-vertical_angle_grid_el)>(SYS_config.tilt+24)) = -inf;
-                BS_element_pattern((90-vertical_angle_grid_el)<SYS_config.tilt) = -inf;
+                alpha = 0.01;%干扰小区天线的缩减因子
+                reduction_factor = 10*log10(alpha);
+                BS_element_pattern = zeros(size(vertical_angle_grid_el));
+                for i = 1 : length(vertical_angle_grid_el)
+                    BS_element_pattern(i) = obj.attached_eNodeB.antenna.elementPattern(vertical_angle_grid_el(i), horizontal_angle_grid_s(i), SYS_config.tilt) + reduction_factor;
+                end
+%                 BS_element_pattern = obj.attached_eNodeB.antenna.elementPattern(vertical_angle_grid_el, horizontal_angle_grid_s, SYS_config.tilt);
                 UE_antenna_gain_1=obj.antenna.elementPattern(vertical_angle_grid_el_ue,phi_1);
                 UE_antenna_gain_2=obj.antenna.elementPattern(vertical_angle_grid_el_ue,phi_2);
                 UE_antenna_gain= max(UE_antenna_gain_1,UE_antenna_gain_2);
@@ -623,9 +628,9 @@ classdef UE < handle
                     wideband_loop_SINR = 0;
                 end
 
-                % SINR
-                obj.wideband_SINR = 10*log10(RX_power/(sum(total_interfering_power(:))+thermal_noise_watts));
-                obj.wideband_SINR2 = 10*log10(RX_power2/(sum(total_interfering_power2(:))+thermal_noise_watts));
+                % SINR,加扰50%，干扰功率将为原先的一半
+                obj.wideband_SINR = 10*log10(RX_power/(sum(total_interfering_power(:))/2+thermal_noise_watts));
+                obj.wideband_SINR2 = 10*log10(RX_power2/(sum(total_interfering_power2(:))/2+thermal_noise_watts));
                 UE_Rx_power = RX_power;
                 UE_Rx_intf_power = sum(total_interfering_power(:));
             else

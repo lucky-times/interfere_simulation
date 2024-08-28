@@ -2,7 +2,7 @@
 clear all;
 fq = 4.9e9;
 azvec = -180:180;
-elvec = 0:90;
+elvec = -90:90;
 antenna = antennas.BSAntenna(6, 8, 1, 0);
 
 % Define antenna pattern
